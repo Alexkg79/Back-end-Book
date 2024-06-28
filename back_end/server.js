@@ -8,11 +8,14 @@ const authMiddleware = require('./middleware/auth');
 
 dotenv.config({ path: './.env' });
 
-console.log('MONGO_URI:', process.env.MONGO_URI); 
+console.log('MONGO_URI:', process.env.MONGO_URI);
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+// Servir les fichiers statiques du répertoire uploads
+app.use('/uploads', express.static('uploads'));
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connexion à MongoDB réussie !'))

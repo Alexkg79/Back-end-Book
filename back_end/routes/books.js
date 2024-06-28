@@ -1,5 +1,4 @@
 const express = require('express');
-
 const router = express.Router();
 const multer = require('multer');
 const Book = require('../models/book');
@@ -19,6 +18,11 @@ const upload = multer({ storage });
 
 // Route pour ajouter un livre
 router.post('/books', auth, upload.single('coverImage'), async (req, res) => {
+  console.log('Requête reçue pour ajouter un livre:', req.body);
+  if (!req.file) {
+    return res.status(400).json({ error: 'Image de couverture requise' });
+  }
+
   const {
     title, author, publicationYear, genre, rating,
   } = req.body;
@@ -37,6 +41,7 @@ router.post('/books', auth, upload.single('coverImage'), async (req, res) => {
     const savedBook = await book.save();
     return res.status(201).json(savedBook);
   } catch (error) {
+    console.error('Erreur lors de la création du livre:', error);
     return res.status(500).json({ error: 'Erreur lors de la création du livre.' });
   }
 });
