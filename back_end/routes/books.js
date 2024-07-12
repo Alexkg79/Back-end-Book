@@ -57,4 +57,74 @@ router.get('/books', async (req, res) => {
   }
 });
 
+// Route pour récupérer un livre par son ID
+router.get('/books/:id', async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id);
+    if (!book) {
+      return res.status(404).json({ error: 'Livre non trouvé.' });
+    }
+    return res.status(200).json(book);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors de la récupération du livre.' });
+  }
+});
+
+// Route pour mettre à jour un livre
+router.put('/books/:id', auth, upload.single('image'), async (req, res) => {
+  try {
+    console.log('Données reçues:', req.body);
+    console.log('Image reçue:', req.file);
+
+    if (!req.body.book) {
+      return res.status(400).json({ error: 'Les données du livre sont manquantes.' });
+    }
+
+    const bookData = JSON.parse(req.body.book);
+    const {
+      title, author, year, genre, rating,
+    } = bookData;
+
+    const coverImage = req.file ? `/uploads/${req.file.filename}` : undefined;
+
+    const updateData = {
+      title,
+      author,
+      publicationYear: year,
+      genre,
+      rating,
+    };
+
+    if (coverImage) {
+      updateData.coverImage = coverImage;
+    }
+
+    const updatedBook = await Book.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true },
+    );
+    if (!updatedBook) {
+      return res.status(404).json({ error: 'Livre non trouvé.' });
+    }
+    return res.status(200).json(updatedBook);
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour:', error);
+    return res.status(500).json({ error: 'Erreur lors de la mise à jour du livre.' });
+  }
+});
+
+// Route pour supprimer un livre
+router.delete('/books/:id', auth, async (req, res) => {
+  try {
+    const deletedBook = await Book.findByIdAndDelete(req.params.id);
+    if (!deletedBook) {
+      return res.status(404).json({ error: 'Livre non trouvé.' });
+    }
+    return res.status(200).json({ message: 'Livre supprimé avec succès.' });
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors de la suppression du livre.' });
+  }
+});
+
 module.exports = router;

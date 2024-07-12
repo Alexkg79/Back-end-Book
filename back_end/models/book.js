@@ -23,8 +23,23 @@ const bookSchema = new mongoose.Schema({
     min: 0,
     max: 5,
   },
+  ratings: [{
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    grade: {
+      type: Number,
+      required: true,
+    },
+  }],
   coverImage: {
     type: String,
+    required: true,
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     required: true,
   },
 });
