@@ -42,7 +42,7 @@ router.post('/login', async (req, res) => {
     // Génération du token JWT
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    return res.status(200).json({ token });
+    return res.status(200).json({ token, userId: user._id });
   } catch (error) {
     return res.status(500).json({ error: 'Erreur interne du serveur!' });
   }
