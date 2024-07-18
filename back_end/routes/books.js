@@ -23,20 +23,27 @@ router.post('/books', auth, upload.single('image'), async (req, res) => {
   try {
     const bookData = JSON.parse(req.body.book);
     const {
-      title, author, year, genre, averageRating, ratings,
+      title, author, year, genre, ratings,
     } = bookData;
 
-    const coverImage = req.file ? `/uploads/${req.file.filename}` : '';
+    const imageUrl = req.file ? `http://localhost:4000/uploads/${req.file.filename}` : '';
+
+    let averageRating = 0;
+    if (ratings && ratings.length > 0) {
+      const totalRating = ratings.reduce((acc, curr) => acc + curr.grade, 0);
+      averageRating = totalRating / ratings.length;
+    }
 
     const book = new Book({
       userId: req.userData.userId,
       title,
       author,
-      publicationYear: year,
+      year,
       genre,
       rating: averageRating,
       ratings,
-      coverImage,
+      imageUrl,
+      averageRating,
     });
 
     const savedBook = await book.save();
@@ -70,6 +77,35 @@ router.get('/books/:id', async (req, res) => {
   }
 });
 
+// Route pour ajouter une note à un livre
+router.post('/books/:id/rating', auth, async (req, res) => {
+  try {
+    const { userId, rating } = req.body;
+    const bookId = req.params.id;
+
+    const book = await Book.findById(bookId);
+    if (!book) {
+      return res.status(404).json({ error: 'Livre non trouvé.' });
+    }
+
+    const existingRating = book.ratings.find((r) => r.userId.toString() === userId);
+    if (existingRating) {
+      return res.status(400).json({ error: 'Vous avez déjà noté ce livre.' });
+    }
+
+    const newRating = { userId, grade: rating };
+    book.ratings.push(newRating);
+    const totalRating = book.ratings.reduce((acc, curr) => acc + curr.grade, 0);
+    book.averageRating = totalRating / book.ratings.length;
+
+    await book.save();
+    return res.status(200).json(book);
+  } catch (error) {
+    console.error('Erreur lors de l\'ajout de la notation:', error);
+    return res.status(500).json({ error: 'Erreur lors de l\'ajout de la notation.' });
+  }
+});
+
 // Route pour mettre à jour un livre
 router.put('/books/:id', auth, upload.single('image'), async (req, res) => {
   try {
@@ -85,18 +121,18 @@ router.put('/books/:id', auth, upload.single('image'), async (req, res) => {
       title, author, year, genre, rating,
     } = bookData;
 
-    const coverImage = req.file ? `/uploads/${req.file.filename}` : undefined;
+    const imageUrl = req.file ? `http://localhost:4000/uploads/${req.file.filename}` : undefined;
 
     const updateData = {
       title,
       author,
-      publicationYear: year,
+      year,
       genre,
       rating,
     };
 
-    if (coverImage) {
-      updateData.coverImage = coverImage;
+    if (imageUrl) {
+      updateData.imageUrl = imageUrl;
     }
 
     const updatedBook = await Book.findByIdAndUpdate(

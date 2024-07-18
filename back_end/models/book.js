@@ -9,7 +9,7 @@ const bookSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  publicationYear: {
+  year: {
     type: Number,
     required: true,
   },
@@ -33,7 +33,7 @@ const bookSchema = new mongoose.Schema({
       required: true,
     },
   }],
-  coverImage: {
+  imageUrl: {
     type: String,
     required: true,
   },
@@ -41,6 +41,10 @@ const bookSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
+  },
+  averageRating: {
+    type: Number,
+    default: 0,
   },
 });
 
