@@ -23,6 +23,10 @@ const bookSchema = new mongoose.Schema({
     min: 0,
     max: 5,
   },
+  averageRating: {
+    type: Number,
+    required: true,
+  },
   ratings: [{
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -41,10 +45,6 @@ const bookSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-  },
-  averageRating: {
-    type: Number,
-    default: 0,
   },
 });
 

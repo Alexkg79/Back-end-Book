@@ -28,7 +28,7 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
   });
 
 app.use('/api/auth', authRoutes);
-app.use('/api', bookRoutes);
+app.use('/api/', bookRoutes);
 
 app.get('/api/protected-route', authMiddleware, (req, res) => {
   res.status(200).json({ message: 'Accès autorisé!' });

@@ -64,19 +64,6 @@ router.get('/books', async (req, res) => {
   }
 });
 
-// Route pour récupérer un livre par son ID
-router.get('/books/:id', async (req, res) => {
-  try {
-    const book = await Book.findById(req.params.id);
-    if (!book) {
-      return res.status(404).json({ error: 'Livre non trouvé.' });
-    }
-    return res.status(200).json(book);
-  } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la récupération du livre.' });
-  }
-});
-
 // Route pour ajouter une note à un livre
 router.post('/books/:id/rating', auth, async (req, res) => {
   try {
@@ -160,6 +147,40 @@ router.delete('/books/:id', auth, async (req, res) => {
     return res.status(200).json({ message: 'Livre supprimé avec succès.' });
   } catch (error) {
     return res.status(500).json({ error: 'Erreur lors de la suppression du livre.' });
+  }
+});
+
+// Route pour récupérer les livres les mieux notés
+router.get('/books/bestrating', async (req, res) => {
+  try {
+    console.log('Tentative de récupération des livres les mieux notés');
+    // Rechercher les livres, trier par averageRating décroissant et limiter à 3 résultats
+    const books = await Book.find().sort({ averageRating: -1 }).limit(3);
+
+    console.log('Livres trouvés:', books);
+    if (books.length === 0) {
+      console.log('Aucun livre trouvé.');
+      return res.status(404).json({ error: 'Aucun livre trouvé.' });
+    }
+
+    console.log('Livres récupérés:', books);
+    return res.status(200).json(books);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des livres les mieux notés:', error);
+    return res.status(500).json({ error: 'Erreur lors de la récupération des livres les mieux notés.' });
+  }
+});
+
+// Route pour récupérer un livre par son ID
+router.get('/books/:id', async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id);
+    if (!book) {
+      return res.status(404).json({ error: 'Livre non trouvé.' });
+    }
+    return res.status(200).json(book);
+  } catch (error) {
+    return res.status(500).json({ error: 'Erreur lors de la récupération du livre.' });
   }
 });
 
