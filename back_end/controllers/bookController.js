@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
 const Book = require('../models/book');
 
@@ -10,7 +10,13 @@ exports.addBook = async (req, res) => {
       title, author, year, genre, ratings,
     } = bookData;
 
-    const imageUrl = req.file ? `http://localhost:4000/uploads/${req.file.filename}` : '';
+    // Validation des champs requis
+    if (!title || !author || !year || !genre) {
+      return res.status(400).json({ error: 'Tous les champs requis ne sont pas fournis.' });
+    }
+
+    // Utilisation de l'URL de l'image optimisée
+    const imageUrl = req.file ? req.file.optimizedImageUrl : '';
 
     let averageRating = 0;
     if (ratings && ratings.length > 0) {
@@ -34,7 +40,7 @@ exports.addBook = async (req, res) => {
     return res.status(201).json(savedBook);
   } catch (error) {
     console.error('Erreur lors de la création du livre:', error);
-    return res.status(500).json({ error: 'Erreur lors de la création du livre.' });
+    return res.status(500).json({ error: 'Erreur interne du serveur lors de la création du livre.' });
   }
 };
 
@@ -44,7 +50,8 @@ exports.getAllBooks = async (req, res) => {
     const books = await Book.find(); // Récupère tous les livres
     return res.status(200).json(books);
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur lors de la récupération des livres.' });
+    console.error('Erreur lors de la récupération des livres:', error);
+    return res.status(500).json({ error: 'Erreur interne du serveur lors de la récupération des livres.' });
   }
 };
 
@@ -93,35 +100,39 @@ exports.updateBook = async (req, res) => {
       title, author, year, genre, rating,
     } = bookData;
 
-    const imageUrl = req.file ? `http://localhost:4000/uploads/${req.file.filename}` : undefined;
+    // Validation des champs requis
+    if (!title || !author || !year || !genre) {
+      return res.status(400).json({ error: 'Tous les champs requis ne sont pas fournis.' });
+    }
 
-    // Trouver le livre
     const book = await Book.findById(req.params.id);
     if (!book) {
       return res.status(404).json({ error: 'Livre non trouvé.' });
     }
 
+    // Vérification que l'utilisateur connecté est bien l'auteur du livre
+    if (book.userId.toString() !== req.userData.userId) {
+      return res.status(403).json({ error: 'Vous n\'êtes pas autorisé à modifier ce livre.' });
+    }
+
     const updateData = {
-      title,
-      author,
-      year,
-      genre,
-      rating,
+      title, author, year, genre, rating,
     };
 
-    if (imageUrl) {
-      // Supprimer l'ancienne image
+    if (req.file) {
+      const { optimizedImageUrl } = req.file;
+      // Supprime l'ancienne image
       if (book.imageUrl) {
         const oldImagePath = path.join(__dirname, '..', 'uploads', path.basename(book.imageUrl));
-        fs.unlink(oldImagePath, (err) => {
-          if (err) {
-            console.error('Erreur lors de la suppression de l\'ancienne image:', err);
-          } else {
-            console.log('Ancienne image supprimée avec succès.');
-          }
-        });
+        try {
+          await fs.unlink(oldImagePath);
+          console.log('Ancienne image supprimée avec succès.');
+        } catch (err) {
+          console.error('Erreur lors de la suppression de l\'ancienne image:', err);
+        }
       }
-      updateData.imageUrl = imageUrl;
+
+      updateData.imageUrl = optimizedImageUrl;
     }
 
     const updatedBook = await Book.findByIdAndUpdate(
@@ -129,9 +140,11 @@ exports.updateBook = async (req, res) => {
       updateData,
       { new: true, runValidators: true },
     );
+
     if (!updatedBook) {
       return res.status(404).json({ error: 'Livre non trouvé.' });
     }
+
     return res.status(200).json(updatedBook);
   } catch (error) {
     console.error('Erreur lors de la mise à jour:', error);
@@ -147,23 +160,28 @@ exports.deleteBook = async (req, res) => {
       return res.status(404).json({ error: 'Livre non trouvé.' });
     }
 
-    // Supprimer l'image associée
+    // Vérification que l'utilisateur connecté est bien l'auteur du livre
+    if (book.userId.toString() !== req.userData.userId) {
+      return res.status(403).json({ error: 'Vous n\'êtes pas autorisé à supprimer ce livre.' });
+    }
+
+    // Supprime l'image associée
     if (book.imageUrl) {
       const imagePath = path.join(__dirname, '..', 'uploads', path.basename(book.imageUrl));
-      fs.unlink(imagePath, (err) => {
-        if (err) {
-          console.error('Erreur lors de la suppression de l\'image:', err);
-        } else {
-          console.log('Image supprimée avec succès.');
-        }
-      });
+      try {
+        await fs.unlink(imagePath);
+        console.log('Image supprimée avec succès.');
+      } catch (err) {
+        console.error('Erreur lors de la suppression de l\'image:', err);
+        return res.status(500).json({ error: 'Livre supprimé, mais impossible de supprimer l\'image associée.' });
+      }
     }
 
     await Book.findByIdAndDelete(req.params.id);
     return res.status(200).json({ message: 'Livre supprimé avec succès.' });
   } catch (error) {
     console.error('Erreur lors de la suppression:', error);
-    return res.status(500).json({ error: 'Erreur lors de la suppression du livre.' });
+    return res.status(500).json({ error: 'Erreur interne du serveur lors de la suppression du livre.' });
   }
 };
 
