@@ -1,30 +1,32 @@
 const express = require('express');
-const multer = require('multer');
-const path = require('path');
 const auth = require('../middleware/auth');
+const optimizeImage = require('../middleware/optimizeImage');
 const bookController = require('../controllers/bookController');
+const upload = require('../middleware/upload');
 
 const router = express.Router();
 
-// Configuration de multer pour le téléchargement d'images
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../uploads'));
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
+module.exports = upload;
 
-const upload = multer({ storage });
+// Route pour ajouter un livre
+router.post('/books', auth, upload.single('image'), optimizeImage, bookController.addBook);
 
-// Routes utilisant les contrôleurs
-router.post('/books', auth, upload.single('image'), bookController.addBook);
+// Route pour récupérer tous les livres
 router.get('/books', bookController.getAllBooks);
+
+// Route pour ajouter une note à un livre
 router.post('/books/:id/rating', auth, bookController.addBookRating);
-router.put('/books/:id', auth, upload.single('image'), bookController.updateBook);
+
+// Route pour mettre à jour un livre
+router.put('/books/:id', auth, upload.single('image'), optimizeImage, bookController.updateBook);
+
+// Route pour supprimer un livre
 router.delete('/books/:id', auth, bookController.deleteBook);
+
+// Route pour récupérer les livres les mieux notés
 router.get('/books/bestrating', bookController.getBestRatedBooks);
+
+// Route pour récupérer un livre par son ID
 router.get('/books/:id', bookController.getBookById);
 
 module.exports = router;

@@ -8,7 +8,7 @@ const optimizeImage = async (req, res, next) => {
 
   try {
     // Chemin de l'image optimisée
-    const optimizedImagePath = path.join('uploads', `optimized-${Date.now()}-${req.file.originalname}`);
+    const optimizedImagePath = path.join('uploads', `optimized-${Date.now()}-${req.file.originalname}.webp`);
 
     // Optimisation de l'image avec Sharp
     await sharp(req.file.buffer)
