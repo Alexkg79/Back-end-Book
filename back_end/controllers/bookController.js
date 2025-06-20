@@ -119,9 +119,8 @@ exports.updateBook = async (req, res) => {
       title, author, year, genre, rating,
     };
 
-    if (req.file) {
-      const { optimizedImageUrl } = req.file;
-      // Supprime l'ancienne image
+    if (req.file && req.file.optimizedImageUrl) {
+      // Supprime l'ancienne image si elle existe
       if (book.imageUrl) {
         const oldImagePath = path.join(__dirname, '..', 'uploads', path.basename(book.imageUrl));
         try {
@@ -132,7 +131,8 @@ exports.updateBook = async (req, res) => {
         }
       }
 
-      updateData.imageUrl = optimizedImageUrl;
+      // Mise à jour de l'URL de l'image avec l'image optimisée par sharp
+      updateData.imageUrl = req.file.optimizedImageUrl;
     }
 
     const updatedBook = await Book.findByIdAndUpdate(
