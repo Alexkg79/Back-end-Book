@@ -17,7 +17,7 @@ const optimizeImage = async (req, res, next) => {
       .toFile(optimizedImagePath);
 
     // Ajout de l'URL de l'image optimisée
-    req.file.optimizedImageUrl = `http://localhost:4000/${optimizedImagePath.replace(/\\/g, '/')}`;
+    req.file.optimizedImageUrl = `https://back-end-book.onrender.com/${optimizedImagePath.replace(/\\/g, '/')}`;
 
     next();
   } catch (error) {
