@@ -86,41 +86,42 @@ exports.addBookRating = async (req, res) => {
 };
 
 // Mettre à jour un livre
-exports.updateBook = async (req, res) => {
-  try {
-    console.log('Données reçues:', req.body);
-    console.log('Image reçue:', req.file);
+  exports.updateBook = async (req, res) => {
+    try {
+      console.log('Données reçues:', req.body);
+      console.log('Image reçue:', req.file);
 
-    if (!req.body.book) {
-      return res.status(400).json({ error: 'Les données du livre sont manquantes.' });
-    }
+      if (!req.body.book) {
+        return res.status(400).json({ error: 'Les données du livre sont manquantes.' });
+      }
 
-    const bookData = JSON.parse(req.body.book);
-    const {
-      title, author, year, genre, rating,
-    } = bookData;
+      const bookData = JSON.parse(req.body.book);
+      const {
+        title, author, year, genre, rating,
+      } = bookData;
 
-    // Validation des champs requis
-    if (!title || !author || !year || !genre) {
-      return res.status(400).json({ error: 'Tous les champs requis ne sont pas fournis.' });
-    }
+      // Validation des champs requis
+      if (!title || !author || !year || !genre) {
+        return res.status(400).json({ error: 'Tous les champs requis ne sont pas fournis.' });
+      }
 
-    const book = await Book.findById(req.params.id);
-    if (!book) {
-      return res.status(404).json({ error: 'Livre non trouvé.' });
-    }
+      const book = await Book.findById(req.params.id);
+      if (!book) {
+        return res.status(404).json({ error: 'Livre non trouvé.' });
+      }
 
-    // Vérification que l'utilisateur connecté est bien l'auteur du livre
-    if (book.userId.toString() !== req.userData.userId) {
-      return res.status(403).json({ error: 'Vous n\'êtes pas autorisé à modifier ce livre.' });
-    }
+      // Vérification que l'utilisateur connecté est bien l'auteur du livre
+      if (book.userId.toString() !== req.userData.userId) {
+        return res.status(403).json({ error: 'Vous n\'êtes pas autorisé à modifier ce livre.' });
+      }
 
-    const updateData = {
-      title, author, year, genre, rating,
-    };
+      const updateData = {
+        title, author, year, genre, rating,
+      };
 
     if (req.file && req.file.optimizedImageUrl) {
-      // Supprime l'ancienne image si elle existe
+      const { optimizedImageUrl } = req.file;
+      // Supprime l'ancienne image
       if (book.imageUrl) {
         const oldImagePath = path.join(__dirname, '..', 'uploads', path.basename(book.imageUrl));
         try {
@@ -132,7 +133,7 @@ exports.updateBook = async (req, res) => {
       }
 
       // Mise à jour de l'URL de l'image avec l'image optimisée par sharp
-      updateData.imageUrl = req.file.optimizedImageUrl;
+      updateData.imageUrl = optimizedImageUrl;
     }
 
     const updatedBook = await Book.findByIdAndUpdate(
