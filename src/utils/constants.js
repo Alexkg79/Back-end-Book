@@ -1,4 +1,4 @@
-const API_URL = 'https://back-end-book.onrender.com';
+const API_URL = process.env.REACT_APP_API_URL;
 export const API_ROUTES = {
   SIGN_UP: `${API_URL}/api/auth/signup`,
   SIGN_IN: `${API_URL}/api/auth/login`,
